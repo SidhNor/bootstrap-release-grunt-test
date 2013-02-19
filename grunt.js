@@ -267,6 +267,23 @@ module.exports = function(grunt) {
     var options = ['--no-single-run', '--auto-watch'].concat(this.args);
     runTestacular('start', options);
   });
+
+
+  grunt.registerTask('release', 'Pushes a release to angular ui', function() {
+    //Bump version in package.json (rename from *[0-9].[0-9].[0-9]-SNAPSHOT to *[0-9].[0-9].[0-9])
+    //run default task
+    //Commit the version change with the following message: chore(release): [versio number]
+    //tag (git tag [version number])
+    //push changes (git push --tags)
+    //switch to gh-pages (git checkout gh-pages)
+    //copy dist tp main
+    //Commit the version change with the following message: chore(release): [versio number]
+    //push changes
+    //git checkout master
+    //Modify package.json to a snapshot
+    //commit chore(release): starting [versio number]
+    //push changes
+  })
   
   return grunt;
 };
