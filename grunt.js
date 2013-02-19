@@ -270,12 +270,26 @@ module.exports = function(grunt) {
 
 
   grunt.registerTask('release', 'Pushes a release to angular ui', function() {
+    var gitCmd = 'git';
+    var packageVersion = new PackageVersion('package.json');
     //Bump version in package.json (rename from *[0-9].[0-9].[0-9]-SNAPSHOT to *[0-9].[0-9].[0-9])
+    packageVersion.save(false);
+    
     //run default task
+    grunt.task.run('default');
+
     //Commit the version change with the following message: chore(release): [versio number]
+    runGit(['commit', '-a', '-m', '"chore(release): ' + packageVersion.prettyVersion() + '"']);
+
     //tag (git tag [version number])
+    runGit(['tag', packageVersion.prettyVersion()]);
+    
     //push changes (git push --tags)
+    runGit(['push', '--tags']);
+
     //switch to gh-pages (git checkout gh-pages)
+    runGit(['checkout', 'gh-pages']);
+
     //copy dist tp main
     //Commit the version change with the following message: chore(release): [versio number]
     //push changes
@@ -283,7 +297,63 @@ module.exports = function(grunt) {
     //Modify package.json to a snapshot
     //commit chore(release): starting [versio number]
     //push changes
-  })
-  
+  });
+
+  function runGit(options) {
+    var gitCmd = 'git';
+    var args = options;
+    var done = grunt.task.current.async();
+    var child = grunt.utils.spawn({
+        cmd: gitCmd,
+        args: args
+    }, function(err, result, code) {
+      if (code) {
+        done(false);
+      } else {
+        done();
+      }
+    });
+  };
+
+  function PackageVersion(sourceFileName){
+    this.sourceFile = sourceFileName;
+    this.versionPackage = grunt.file.readJSON(this.sourceFile);
+    var versionMatcher = new RegExp('([0-9]).([0-9]).([0-9])*');
+    var versionResult = versionMatcher.exec(this.versionPackage.version);
+    if (versionResult.length != 4) {
+      grunt.warn('Error parsing version number');
+    }
+    this.currentCleanVersion = { major: 0, minor: 0, build: 0};
+    this.currentCleanVersion.major = versionResult[1];
+    this.currentCleanVersion.minor = versionResult[2];
+    this.currentCleanVersion.build = versionResult[3];
+    grunt.log.ok('Current version is: ' + versionResult[0]);
+  }
+
+  PackageVersion.prototype.incrementMajor = function(){
+    this.currentCleanVersion.major++;
+    this.currentCleanVersion.minor = 0;
+    this.currentCleanVersion.build = 0;
+  };
+  PackageVersion.prototype.incrementMinor = function(){
+    this.currentCleanVersion.minor++;
+    this.currentCleanVersion.build = 0;
+  };
+  PackageVersion.prototype.incrementBuild = function(){
+    this.currentCleanVersion.build++;
+  };  
+  PackageVersion.prototype.prettyVersion = function() {
+    return this.currentCleanVersion.major + '.' +
+      this.currentCleanVersion.minor + '.' +
+      this.currentCleanVersion.build;
+  };
+  PackageVersion.prototype.save = function(withSnapshot){
+    this.versionPackage.version = this.prettyVersion();
+    if (withSnapshot) {
+      this.versionPackage.version += '-SNAPSHOT';
+    }
+    grunt.file.write(this.sourceFile, JSON.stringify(this.versionPackage, null, 2));
+  };
+
   return grunt;
 };
