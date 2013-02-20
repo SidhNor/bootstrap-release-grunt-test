@@ -320,7 +320,7 @@ module.exports = function(grunt) {
     packageVersion.incrementBuild();
     packageVersion.save(true);
     var done = grunt.task.current.async();
-    runGit(['commit', '-a', '-m', 'chore(release): starting' + packageVersion.prettyVersion()], done).on('exit', function() {
+    runGit(['commit', '-a', '-m', 'chore(release): starting ' + packageVersion.prettyVersion()], done).on('exit', function() {
       //push changes 
       runGit(['push'], done).on('exit', function() {
         done();
