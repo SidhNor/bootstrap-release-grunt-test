@@ -384,7 +384,7 @@ module.exports = function(grunt) {
     if (withSnapshot) {
       this.versionPackage.version += '-SNAPSHOT';
     }
-    grunt.file.write(this.sourceFile, JSON.stringify(this.versionPackage, null, 2));
+    grunt.file.write(this.sourceFile, JSON.stringify(this.versionPackage, null, 2) + '\n');
   };
 
   return grunt;
