@@ -269,66 +269,78 @@ module.exports = function(grunt) {
   });
 
   var packageVersion;
-  grunt.registerTask('release-clearversion', 'Make sure version is clean of snapshot', function() {
+
+  grunt.registerTask('before-release-build', 'Make sure version is clean of snapshot', function() {
     packageVersion = new PackageVersion('package.json');
     //Bump version in package.json (rename from *[0-9].[0-9].[0-9]-SNAPSHOT to *[0-9].[0-9].[0-9])
     packageVersion.save(false);
   });
 
-  grunt.registerTask('release-commit-tag-push', 'Commits and pushes', function() {
+  grunt.registerTask('after-release-build', 'Releases the build', function() {
+
     var done = grunt.task.current.async();
-    //Commit the version change with the following message: chore(release): [versio number]
-    runGit(['commit', '-a', '-m', 'chore(release): ' + packageVersion.prettyVersion()], done).on('exit', function() {
-      //tag (git tag [version number])
-      runGit(['tag', packageVersion.prettyVersion()], done).on('exit', function() {
-        //push changes (git push --tags)
-        runGit(['push', '--tags'], done).on('exit', function() {
-          runGit(['push'], done).on('exit', function() {
-            //switch to gh-pages (git checkout gh-pages)
-            runGit(['checkout', 'gh-pages'], done).on('exit', function() {
-              done();
+
+    function releaseCommitTagPush() {
+      //Commit the version change with the following message: chore(release): [versio number]
+      runGit(['commit', '-a', '-m', 'chore(release): ' + packageVersion.prettyVersion()], done).on('exit', function() {
+        //tag (git tag [version number])
+        runGit(['tag', packageVersion.prettyVersion()], done).on('exit', function() {
+          //push changes (git push --tags)
+          runGit(['push', '--tags'], done).on('exit', function() {
+            runGit(['push'], done).on('exit', function() {
+              //switch to gh-pages (git checkout gh-pages)
+              runGit(['checkout', 'gh-pages'], done).on('exit', function() {
+                releaseCopyDist();
+              });
             });
           });
         });
       });
-    });
-  });
+    }
 
-  grunt.registerTask('release-copy-dist', 'Copy dist to main folder', function() {
-    grunt.file.expand('dist/**/*.*').forEach(function(path) {
-      grunt.file.copy(path, path.replace('dist/',''));
-    });
-  });
+    //Copy dist to main folder
+    function releaseCopyDist() {
+      grunt.file.expand('dist/**/*.*').forEach(function(path) {
+        grunt.file.copy(path, path.replace('dist/',''));
+      });
+      releaseVersionChangeGhPages();
+    }
 
-  grunt.registerTask('release-versionchange-gh', 'Commit version changes to gh-pages', function() {
-    var done = grunt.task.current.async();
-    //Commit the version change with the following message: chore(release): [versio number]
-    runGit(['add', '-A'], done).on('exit', function() {
-      runGit(['commit', '-m', 'chore(release): ' + packageVersion.prettyVersion()], done).on('exit', function() {
-        //push changes 
-        runGit(['push'], done).on('exit', function() {
-          //switch to gh-pages (git checkout gh-pages)
-          runGit(['checkout', 'master'], done).on('exit', function() {
-            done();
+    //Commit version changes to gh-pages
+    function releaseVersionChangeGhPages() {
+      //Commit the version change with the following message: chore(release): [versio number]
+      runGit(['add', '-A'], done).on('exit', function() {
+        runGit(['commit', '-m', 'chore(release): ' + packageVersion.prettyVersion()], done).on('exit', function() {
+          //push changes 
+          runGit(['push'], done).on('exit', function() {
+            //switch to gh-pages (git checkout gh-pages)
+            runGit(['checkout', 'master'], done).on('exit', function() {
+              releaseBumpFinalize();
+            });
           });
         });
       });
-    });
-  });
+    }
 
-  grunt.registerTask('release-bumpfinalize', 'Bump version and commit starting', function() {
-    packageVersion.incrementBuild();
-    packageVersion.save(true);
-    var done = grunt.task.current.async();
-    runGit(['commit', '-a', '-m', 'chore(release): starting ' + packageVersion.prettyVersion()], done).on('exit', function() {
-      //push changes 
-      runGit(['push'], done).on('exit', function() {
-        done();
+    //Bump version and commit starting
+    function releaseBumpFinalize() {
+      packageVersion.incrementBuild();
+      packageVersion.save(true);
+      runGit(['commit', '-a', '-m', 'chore(release): starting ' + packageVersion.prettyVersion()], done).on('exit', function() {
+        //push changes 
+        runGit(['push'], done).on('exit', function() {
+          done();
+        });
       });
-    });
+    }
+
+    //Start async task chain
+    releaseCommitTagPush();
+
   });
 
-  grunt.registerTask('release', 'release-clearversion default release-commit-tag-push release-copy-dist release-versionchange-gh release-bumpfinalize');
+  //release-commit-tag-push release-copy-dist release-versionchange-gh release-bumpfinalize
+  grunt.registerTask('release', 'before-release-build default after-release-build');
 
   function runGit(options, done) {
     var gitCmd = 'git';
