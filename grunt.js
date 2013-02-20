@@ -351,6 +351,7 @@ module.exports = function(grunt) {
   function PackageVersion(sourceFileName){
     this.sourceFile = sourceFileName;
     this.versionPackage = grunt.file.readJSON(this.sourceFile);
+
     var versionMatcher = new RegExp('([0-9]).([0-9]).([0-9])*');
     var versionResult = versionMatcher.exec(this.versionPackage.version);
     if (versionResult.length != 4) {
@@ -385,6 +386,7 @@ module.exports = function(grunt) {
       this.versionPackage.version += '-SNAPSHOT';
     }
     grunt.file.write(this.sourceFile, JSON.stringify(this.versionPackage, null, 2) + '\n');
+    grunt.config.set('pkg', this.versionPackage);
   };
 
   return grunt;
