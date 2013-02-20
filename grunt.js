@@ -333,7 +333,7 @@ module.exports = function(grunt) {
   function runGit(options, done) {
     var gitCmd = 'git';
     var args = options;
-    grunt.log.ok('Executing git with parameters: ' + args);
+    grunt.log.ok('Do git ' + args.join(' '));
     var child = grunt.utils.spawn({
         cmd: gitCmd,
         args: args
