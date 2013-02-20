@@ -364,7 +364,7 @@ module.exports = function(grunt) {
     this.sourceFile = sourceFileName;
     this.versionPackage = grunt.file.readJSON(this.sourceFile);
 
-    var versionMatcher = new RegExp('([0-9]).([0-9]).([0-9])*');
+    var versionMatcher = new RegExp('(\\d{1,3}).(\\d{1,3}).(\\d{1,3})*');
     var versionResult = versionMatcher.exec(this.versionPackage.version);
     if (versionResult.length != 4) {
       grunt.warn('Error parsing version number');
